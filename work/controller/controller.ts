@@ -9,7 +9,7 @@ interface shapesObject {
  area?: number;
 }
 
-const fetchUsers = (req: Request, res: Response, next: NextFunction) => {
+const fetchRecords = (req: Request, res: Response, next: NextFunction) => {
  res.send(database);
 };
 
@@ -111,6 +111,6 @@ function validateTriangle(triangle: Record<string, any>) {
 }
 export default {
   calculate, 
-  fetchUsers, 
+  fetchRecords, 
  
 };
