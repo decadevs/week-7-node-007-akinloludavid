@@ -1,5 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const joi_1 = __importDefault(require("joi"));
 const database = require("../database/database.json");
 const fetchUsers = (req, res, next) => {
     res.send(database);
@@ -11,31 +15,36 @@ const calculate = (req, res) => {
         dimension: field.dimension,
     };
     if (field.shape === "square") {
-        if (typeof field.dimension !== "number") {
+        let { error } = validateSquare(newShapes);
+        if (error) {
             return res
                 .status(400)
-                .json({ message: "The shape square only requires one dimension" });
+                .send(error.details[0].message);
         }
         newShapes.area = Math.pow(field.dimension, 2);
     }
     else if (field.shape === "rectangle") {
         let { a, b } = field.dimension;
-        if (!a || !b || typeof a !== 'number' || typeof b !== 'number') {
-            return res.status(400).json({ message: "Dimensions cannot be undefined. Dimensions have to be a valid number" });
+        const { error } = validateRectangle(newShapes);
+        if (error) {
+            return res.status(400).send(error.details[0].message);
         }
         newShapes.area = a * b;
     }
     else if (field.shape === "circle") {
-        if (typeof field.dimension !== 'number') {
-            return res.status(400).json({ message: "The dimension of the circle is its radius, hence it has to be a valid number." });
+        const { error } = validateCircle(newShapes);
+        if (error) {
+            return res.status(400).send(error.details[0].message);
         }
         newShapes.area = parseFloat((Math.PI * field.dimension * field.dimension).toFixed(2));
     }
     else if (field.shape === "triangle") {
         const { a, b, c } = field.dimension;
-        if (!a || !b || !c || typeof a !== "number" || typeof b !== "number" || typeof c !== 'number') {
-            return res.status(400).json({ message: "Invalid dimensions. all dimensions must be a valid number" });
+        const { error } = validateTriangle(newShapes);
+        if (error) {
+            return res.status(400).send(error.details[0].message);
         }
+        //
         let s = (a + b + c) / 2;
         newShapes.area = parseFloat(Math.sqrt(s * (s - a) * (s - b) * (s - c)).toFixed(2));
     }
@@ -45,4 +54,44 @@ const calculate = (req, res) => {
     database.push(newShapes);
     res.status(201).json(newShapes);
 };
-exports.default = { calculate, fetchUsers };
+function validateSquare(square) {
+    const schema = joi_1.default.object({
+        shape: joi_1.default.string().required(),
+        dimension: joi_1.default.number()
+            .required()
+            .greater(0)
+    });
+    return schema.validate(square);
+}
+function validateRectangle(rectangle) {
+    const schema = joi_1.default.object({
+        shape: joi_1.default.string().required(),
+        dimension: joi_1.default.object({
+            a: joi_1.default.number().required().greater(0),
+            b: joi_1.default.number().required().greater(0)
+        })
+    });
+    return schema.validate(rectangle);
+}
+function validateCircle(circle) {
+    const schema = joi_1.default.object({
+        shape: joi_1.default.string().required(),
+        dimension: joi_1.default.number().required().greater(0),
+    });
+    return schema.validate(circle);
+}
+function validateTriangle(triangle) {
+    const schema = joi_1.default.object({
+        shape: joi_1.default.string().required(),
+        dimension: joi_1.default.object({
+            a: joi_1.default.number().required().greater(0),
+            b: joi_1.default.number().required().greater(0),
+            c: joi_1.default.number().required().greater(0),
+        }),
+    });
+    return schema.validate(triangle);
+}
+exports.default = {
+    calculate,
+    fetchUsers,
+};

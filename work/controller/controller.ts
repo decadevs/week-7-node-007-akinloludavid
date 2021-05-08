@@ -20,31 +20,42 @@ const calculate = (req: Request, res: Response) => {
   shape: field.shape,
   dimension: field.dimension,
  };
+ 
  if (field.shape === "square") {
-  if (typeof field.dimension !== "number") {
+   let {error} =validateSquare(newShapes);
+  if (error) {
    return res
     .status(400)
-    .json({ message: "The shape square only requires one dimension" });
+    .send(error.details[0].message);
   }
   newShapes.area = Math.pow(field.dimension, 2);
- } else if (field.shape === "rectangle") {
+ } 
+ else if (field.shape === "rectangle") {
    let {a,b} = field.dimension
-   if (!a || !b || typeof a !=='number' || typeof b !== 'number') {
-     return res.status(400).json({message:"Dimensions cannot be undefined. Dimensions have to be a valid number"})
+   const {error} =validateRectangle(newShapes)
+   if (error) {
+     return res.status(400).send(error.details[0].message)
    }
   newShapes.area = a * b;
- } else if (field.shape === "circle") {
-   if (typeof field.dimension !== 'number'){
-     return res.status(400).json({message:"The dimension of the circle is its radius, hence it has to be a valid number."})
+
+ } 
+ else if (field.shape === "circle") {
+   const {error} = validateCircle(newShapes)
+   if (error){
+     return res.status(400).send(error.details[0].message)
    }
   newShapes.area = parseFloat(
    (Math.PI * field.dimension * field.dimension).toFixed(2)
   );
- } else if (field.shape === "triangle") {
+ } 
+ 
+ else if (field.shape === "triangle") {
   const { a, b, c } = field.dimension;
-  if (!a || !b ||!c || typeof a !== "number" || typeof b !== "number"|| typeof c !== 'number'){
-    return res.status(400).json({message:"Invalid dimensions. all dimensions must be a valid number"})
+  const { error } = validateTriangle(newShapes);
+  if (error){
+    return res.status(400).send(error.details[0].message)
   }
+  //
    let s = (a + b + c) / 2;
   newShapes.area = parseFloat(
    Math.sqrt(s * (s - a) * (s - b) * (s - c)).toFixed(2)
@@ -52,8 +63,54 @@ const calculate = (req: Request, res: Response) => {
  } else {
   res.status(400).json({ message: "shape defined cannot be found" });
  }
+
  database.push(newShapes);
  res.status(201).json(newShapes);
 };
 
-export default {calculate, fetchUsers};
+function validateSquare(square:Record<string, any>){
+  const schema = Joi.object({
+    shape: Joi.string().required(),
+    dimension: Joi.number()
+                .required()
+                .greater(0)
+  })
+  return schema.validate(square)
+}
+
+function validateRectangle(rectangle:Record<string, any>){
+  const schema = Joi.object({
+    shape: Joi.string().required(),
+    dimension: Joi.object({
+      a:Joi.number().required().greater(0), 
+      b: Joi.number().required().greater(0)
+    })
+  })
+  return schema.validate(rectangle)
+}
+
+function validateCircle (circle:Record<string, any>){
+  const schema = Joi.object({
+   shape: Joi.string().required(),
+   dimension: Joi.number().required().greater(0),
+  });
+  return schema.validate(circle);
+}
+
+
+function validateTriangle(triangle: Record<string, any>) {
+ const schema = Joi.object({
+  shape: Joi.string().required(),
+  dimension: Joi.object({
+   a: Joi.number().required().greater(0),
+   b: Joi.number().required().greater(0),
+   c: Joi.number().required().greater(0),
+  }),
+ });
+ return schema.validate(triangle);
+}
+export default {
+  calculate, 
+  fetchUsers, 
+ 
+};
