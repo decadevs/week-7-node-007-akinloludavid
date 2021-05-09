@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 
 import indexRouter from './routes/calculate';
-import usersRouter from './routes/fetchUsers';
+import usersRouter from './routes/fetchRecords';
 
 var app = express();
 
@@ -20,7 +20,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/fetchUsers', usersRouter);
+app.use('/fetchRecords', usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

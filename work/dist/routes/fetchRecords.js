@@ -4,11 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+let router = express_1.Router();
 const controller_1 = __importDefault(require("../controller/controller"));
-const router = express_1.Router();
-/* GET home page. */
-router.get("/", function (req, res, next) {
-    res.send("<h1>My express App</h1>");
-});
-router.post("/calculate", controller_1.default.calculate);
+/* GET Records listing. */
+router.get('/', controller_1.default.fetchRecords);
 exports.default = router;

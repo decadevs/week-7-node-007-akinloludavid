@@ -1,28 +1,35 @@
 
 import {Request, Response, NextFunction } from "express";
-import Joi from 'joi';
-const database = require("../database/database.json");
-
+import { v4 as uuidv4 } from "uuid";
+import Validation from '../Utils/util';
+import fs from 'fs';
+import path from 'path'
+let database = path.join(__dirname, 'database/database.json')
+console.log(database)
 interface shapesObject {
  shape: string;
  dimension: number | Record<string, number>;
+ id:string,
  area?: number;
 }
+const recordsArray:Record<string,number|any>[] = [];
 
 const fetchRecords = (req: Request, res: Response, next: NextFunction) => {
- res.send(database);
+ res.send(recordsArray);
 };
 
 
 const calculate = (req: Request, res: Response) => {
  let field = req.body;
  let newShapes: shapesObject = {
+    id: uuidv4(),
   shape: field.shape,
   dimension: field.dimension,
+ 
  };
  
  if (field.shape === "square") {
-   let {error} =validateSquare(newShapes);
+   let {error} =Validation.validateSquare(newShapes);
   if (error) {
    return res
     .status(400)
@@ -32,7 +39,7 @@ const calculate = (req: Request, res: Response) => {
  } 
  else if (field.shape === "rectangle") {
    let {a,b} = field.dimension
-   const {error} =validateRectangle(newShapes)
+   const {error} =Validation.validateRectangle(newShapes)
    if (error) {
      return res.status(400).send(error.details[0].message)
    }
@@ -40,7 +47,7 @@ const calculate = (req: Request, res: Response) => {
 
  } 
  else if (field.shape === "circle") {
-   const {error} = validateCircle(newShapes)
+   const {error} = Validation.validateCircle(newShapes)
    if (error){
      return res.status(400).send(error.details[0].message)
    }
@@ -51,7 +58,7 @@ const calculate = (req: Request, res: Response) => {
  
  else if (field.shape === "triangle") {
   const { a, b, c } = field.dimension;
-  const { error } = validateTriangle(newShapes);
+  const { error } = Validation.validateTriangle(newShapes);
   if (error){
     return res.status(400).send(error.details[0].message)
   }
@@ -64,51 +71,12 @@ const calculate = (req: Request, res: Response) => {
   res.status(400).json({ message: "shape defined cannot be found" });
  }
 
- database.push(newShapes);
+ recordsArray.push(newShapes);
+ fs.writeFileSync(database, JSON.stringify(recordsArray), 'utf-8')
  res.status(201).json(newShapes);
 };
 
-function validateSquare(square:Record<string, any>){
-  const schema = Joi.object({
-    shape: Joi.string().required(),
-    dimension: Joi.number()
-                .required()
-                .greater(0)
-  })
-  return schema.validate(square)
-}
 
-function validateRectangle(rectangle:Record<string, any>){
-  const schema = Joi.object({
-    shape: Joi.string().required(),
-    dimension: Joi.object({
-      a:Joi.number().required().greater(0), 
-      b: Joi.number().required().greater(0)
-    })
-  })
-  return schema.validate(rectangle)
-}
-
-function validateCircle (circle:Record<string, any>){
-  const schema = Joi.object({
-   shape: Joi.string().required(),
-   dimension: Joi.number().required().greater(0),
-  });
-  return schema.validate(circle);
-}
-
-
-function validateTriangle(triangle: Record<string, any>) {
- const schema = Joi.object({
-  shape: Joi.string().required(),
-  dimension: Joi.object({
-   a: Joi.number().required().greater(0),
-   b: Joi.number().required().greater(0),
-   c: Joi.number().required().greater(0),
-  }),
- });
- return schema.validate(triangle);
-}
 export default {
   calculate, 
   fetchRecords, 
