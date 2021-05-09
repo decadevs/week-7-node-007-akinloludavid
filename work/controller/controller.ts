@@ -5,7 +5,6 @@ import Validation from '../Utils/util';
 import fs from 'fs';
 import path from 'path'
 let database = path.join(__dirname, 'database/database.json')
-console.log(database)
 interface shapesObject {
  shape: string;
  dimension: number | Record<string, number>;
